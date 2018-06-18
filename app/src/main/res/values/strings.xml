@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">ImageServiceApp</string>
-    <string name="ConnectBtn">Connect</string>
-    <string name="DisconnectBtn">Disconnect</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_disconnect">Disconnect</string>
 </resources>
