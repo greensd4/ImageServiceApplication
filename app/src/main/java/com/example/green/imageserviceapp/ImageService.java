@@ -6,23 +6,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-
-import static android.app.Activity.RESULT_OK;
 
 public class ImageService extends Service {
     BroadcastReceiver wifiReceiver;
@@ -43,6 +41,11 @@ public class ImageService extends Service {
         filter = new IntentFilter();
         filter.addAction("android.net.wifi.supplicant.CONNECTION_CHANGE");
         filter.addAction("android.net.wifi.STATE_CHANGE");
+
+    }
+
+    public int onStartCommand(Intent intent, int flag, int startId) {
+        Toast.makeText(this,"Service starting...", Toast.LENGTH_SHORT).show();
         wifiReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -53,70 +56,86 @@ public class ImageService extends Service {
                         //get the different network states
                         //
                         if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
-                            startTransfer();
-
+                            startTransfer(context);
                         }
                     }
                 }
             }
         };
         this.registerReceiver(this.wifiReceiver, filter);
-    }
-
-    public int onStartCommand(Intent intent, int flag, int startId) {
-        Toast.makeText(this,"Service starting...", Toast.LENGTH_SHORT).show();
         return START_STICKY;
     }
 
     public void onDestroy() {
         Toast.makeText(this,"Service ending...", Toast.LENGTH_SHORT).show();
     }
-
-    public void startTransfer() {
-
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default").
-                setVibrate(new long[]{0, 100, 100, 100, 100, 100})
-                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Content Title")
-                .setContentText("Content Text");
-
+    public void startTransfer(Context context) {
+        updateImageList();
         final int notify_id = 1;
+        final NotificationCompat.Builder builder = new NotificationCompat.
+                Builder(context, "default");
+        final NotificationManager notificationManager = (NotificationManager)
+                getSystemService(Context.NOTIFICATION_SERVICE);
+        builder.setSmallIcon(R.drawable.ic_launcher_background);
         builder.setContentTitle("Transfer images");
         builder.setContentText("Transfer in progress...");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    TcpClient tcpClient = new TcpClient(8500, "10.0.2.2");
+                    int count = 0;
+                    int length = AndroidImages.size();
+                    if (AndroidImages != null) {
+                        for (File pic : AndroidImages) {
+                            //sends the message to the server
+                            tcpClient.sendFile(pic);
+                            Log.d("Tcp Client:", "sent file:" + pic.getName());
+                            //updating the progress bar.
+                            count = count + 100 / length;
+                            builder.setProgress(100, count, false);
+                            notificationManager.notify(notify_id, builder.build());
 
-         try {
-             TcpClient tcpClient = new TcpClient(8500, "10.0.2.2");
-             File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-             if (dcim == null) {
-                 return;
-             }
-             File[] pics = dcim.listFiles();
-             int count = 1;
-             if (pics != null) {
-                 for (File pic : pics) {
-                     //sends the message to the server
-                     tcpClient.sendFile(pic);
-                     try {
-                         //updating the progress bar.
-                         builder.setProgress(pics.length, count, false);
-                         notificationManager.notify(notify_id, builder.build());
-                         builder.setContentText(String.valueOf(count) + "%");
-                         count++;
-                     } catch (NullPointerException ne) {
-                         Log.e("Notify", "C: Error", ne);
-                     }
-                 }
-                 builder.setProgress(0, 0, false);
-                 builder.setContentText("Transfer is complete!");
-                 notificationManager.notify(notify_id, builder.build());
-             }
-         } catch (Exception e) {
-             Log.e("Tcp", "C: Error", e);
+                        }
+                        builder.setProgress(0, 0, false);
+                        builder.setContentText("Transfer is complete!");
+                        notificationManager.notify(notify_id, builder.build());
+                    }
+                } catch (Exception e) {
+                    Log.e("Tcp", "C: Error", e);
+                }
+            }
+        }).start();
 
-         }
      }
+    public void getImage(File directory, List<File> picsFilesList) {
+        File[] files = directory.listFiles();
+        int len = files.length;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                getImage(file, picsFilesList);
+            } else if(file.toString().contains(".jpg")) {
+                picsFilesList.add(file);
+            }
+        }
+    }
+    public void updateImageList() {
+        File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        File[] fileOrDir = dcim.listFiles();
+        List<File> picsFilesList = new ArrayList<>();
+        int len =fileOrDir.length;
+        if (fileOrDir != null) {
+            for (File file : fileOrDir) {
+                //check if dir
+                if (file.isDirectory()) {
+                    getImage(file, picsFilesList);
+                } else if(file.toString().contains(".jpg")) { //check if file
+                    picsFilesList.add(file);
+                }
+            }
+        }
+        AndroidImages = picsFilesList;
+    }
 }
 
 

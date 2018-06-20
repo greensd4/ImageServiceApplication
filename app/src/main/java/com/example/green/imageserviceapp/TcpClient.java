@@ -16,8 +16,9 @@ import java.net.Socket;
 public class TcpClient {
     private int port;
     private String ip;
-    private PrintWriter mBufferOut;
     private Socket socket;
+    //private File fileToSend;
+
     public TcpClient(int port, String ip)throws Exception{
         this.port = port;
         this.ip = ip;
@@ -27,73 +28,53 @@ public class TcpClient {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                InetAddress serverAddr;
                 try {
-                    //here you must put your computer's IP address.
-                    InetAddress serverAddr = InetAddress.getByName("10.0.2.2");
-                    Log.d("TCP Client", "C: Connecting...");
+                    try{
+                        //here you must put your computer's IP address.
+                        serverAddr = InetAddress.getByName("10.0.2.2");
+                    }catch (Exception e) {
+                        Log.e("TCP", "ADD: Error", e);
+                        return;
+                    }
+                    Log.d("TCP Client", "M: Connecting...");
                     //create a socket to make the connection with the server
-                    Socket socket = new Socket(serverAddr, 8500);
+                    socket = new Socket(serverAddr, 8500);
                     //mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
                 } catch (Exception e) {
-                    Log.e("TCP", "C: Error", e);
+                    Log.e("TCP", "Socket: Error", e);
                 }
             }
         }).start();
     }
     public void disconnect(){
-        if (mBufferOut != null) {
-            mBufferOut.flush();
-            mBufferOut.close();
-        }
         try {
             socket.close();
         }catch (Exception e){
             Log.e("TCP", "Socket: Error", e);
         }
     }
-    public void sendFile(final File f) throws Exception{
-        final String ip = this.ip;
-        final int port = this.port;
+    public void sendFile(File file) throws Exception{
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //here you must put your computer's IP address.
-                    InetAddress serverAddr = InetAddress.getByName(ip);
-                    Log.d("TCP Client", "C: Connecting...");
-                    //create a socket to make the connection with the server
-                    Socket socket = new Socket(serverAddr, port);
-                    //mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+        try {
+            Log.d("TCP Client", "M: Sending a file..." +file.getName());
 
-                    PrintWriter output = new PrintWriter(socket.getOutputStream());
-                    InputStream input = socket.getInputStream();
-                    output.write(f.getName());
-                    byte[] retVal = new byte[1];
-                    byte t = 1;
-                    if(input.read(retVal) == 1){
-                        if(retVal[0] == t){
-                            byte[] byteFile = getFileByBytes(f);
-                            //creating a new CommandRecievedEventArgs object
-                            CommandRecievedEventArgs crea =
-                                    new CommandRecievedEventArgs(7,byteFile,null);
-                            //cast CommandRecievedEventArgs into JSon
-                            String bytesAsString = crea.toJson();
-                            //send Command to service.
-                            output.print(bytesAsString);
-                            output.flush();
-                            output.close();
-                        }
-                    }
-
-                } catch (Exception e) {
-                    Log.e("TCP", "C: Error", e);
-                }
-            }
-        }).start();
-
-
-
+            PrintWriter output = new PrintWriter(socket.getOutputStream());
+            InputStream input = socket.getInputStream();
+            String nameOfFile = file.getName();
+            byte[] byteFile = getFileByBytes(file);
+            String[] args = createArgs(byteFile,nameOfFile);
+            //creating a new CommandRecievedEventArgs object
+            CommandRecievedEventArgs crea = new CommandRecievedEventArgs(7,args,null);
+            //cast CommandRecievedEventArgs into JSon
+            String bytesAsString = crea.toJson();
+            //send Command to service.
+            output.print(bytesAsString);
+            output.flush();
+            //output.close();
+            } catch (Exception e) {
+            Log.e("TCP", "C: Error", e);
+        }
     }
     private byte[] getFileByBytes(File file) throws Exception{
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -104,5 +85,13 @@ public class TcpClient {
             stream.write(buffer, 0, i);
         }
         return stream.toByteArray();
+    }
+
+    String[] createArgs(byte[] imageAsBytes, String imageName) {
+        String[] args = new String[2];
+        String s = new String(imageAsBytes);
+        args[0] = s;
+        args[1] = imageName;
+        return args;
     }
 }

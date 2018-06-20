@@ -11,11 +11,9 @@ public class CommandRecievedEventArgs {
     private String[] Args;
     private String RequestDirPath;
 
-    public CommandRecievedEventArgs(int id,byte[] args, String reqDirPath) {
+    public CommandRecievedEventArgs(int id,String[] args, String reqDirPath) {
         this.CommandID = id;
-        String s = new String(args);
-        this.Args = new String[1];
-        this.Args[0] = s;
+        this.Args = args;
         this.RequestDirPath = reqDirPath;
     }
 
@@ -27,6 +25,9 @@ public class CommandRecievedEventArgs {
             jA.put(Args[0]);
             j.put("Args", jA);
             j.put("RequestDirPath", RequestDirPath);
+
+            Log.d("JSon",j.toString());
+
         } catch (JSONException je) {
             Log.e("JSon","C:Error", je);
             return null;
