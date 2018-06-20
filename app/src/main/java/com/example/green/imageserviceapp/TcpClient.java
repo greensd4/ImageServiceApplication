@@ -24,17 +24,21 @@ public class TcpClient {
         createNewConnection();
     }
     private void createNewConnection() throws Exception{
-        try {
-            //here you must put your computer's IP address.
-            InetAddress serverAddr = InetAddress.getByName(this.ip);
-            Log.d("TCP Client", "C: Connecting...");
-            //create a socket to make the connection with the server
-            this.socket = new Socket(serverAddr, this.port);
-            mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-        } catch (Exception e) {
-            Log.e("TCP", "C: Error", e);
-            throw e;
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //here you must put your computer's IP address.
+                    InetAddress serverAddr = InetAddress.getByName("10.0.2.2");
+                    Log.d("TCP Client", "C: Connecting...");
+                    //create a socket to make the connection with the server
+                    Socket socket = new Socket(serverAddr, 8500);
+                    //mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                } catch (Exception e) {
+                    Log.e("TCP", "C: Error", e);
+                }
+            }
+        }).start();
     }
     public void disconnect(){
         if (mBufferOut != null) {
@@ -47,19 +51,49 @@ public class TcpClient {
             Log.e("TCP", "Socket: Error", e);
         }
     }
-    public void sendFile(File f) throws Exception{
-        OutputStream output = socket.getOutputStream();
-        InputStream input = socket.getInputStream();
-        output.write(f.getName().getBytes());
-        byte[] retVal = new byte[1];
-        byte t = 1;
-        if(input.read(retVal) == 1){
-            if(retVal[0] == t){
-                byte[] byteFile = getFileByBytes(f);
-                output.write(byteFile);
-                output.flush();
+    public void sendFile(final File f) throws Exception{
+        final String ip = this.ip;
+        final int port = this.port;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //here you must put your computer's IP address.
+                    InetAddress serverAddr = InetAddress.getByName(ip);
+                    Log.d("TCP Client", "C: Connecting...");
+                    //create a socket to make the connection with the server
+                    Socket socket = new Socket(serverAddr, port);
+                    //mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+
+                    PrintWriter output = new PrintWriter(socket.getOutputStream());
+                    InputStream input = socket.getInputStream();
+                    output.write(f.getName());
+                    byte[] retVal = new byte[1];
+                    byte t = 1;
+                    if(input.read(retVal) == 1){
+                        if(retVal[0] == t){
+                            byte[] byteFile = getFileByBytes(f);
+                            //creating a new CommandRecievedEventArgs object
+                            CommandRecievedEventArgs crea =
+                                    new CommandRecievedEventArgs(7,byteFile,null);
+                            //cast CommandRecievedEventArgs into JSon
+                            String bytesAsString = crea.toJson();
+                            //send Command to service.
+                            output.print(bytesAsString);
+                            output.flush();
+                            output.close();
+                        }
+                    }
+
+                } catch (Exception e) {
+                    Log.e("TCP", "C: Error", e);
+                }
             }
-        }
+        }).start();
+
+
+
     }
     private byte[] getFileByBytes(File file) throws Exception{
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -70,6 +104,5 @@ public class TcpClient {
             stream.write(buffer, 0, i);
         }
         return stream.toByteArray();
-
     }
 }

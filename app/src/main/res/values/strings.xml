@@ -3,4 +3,6 @@
     <string name="btn_connect">Connect</string>
     <string name="btn_disconnect">Disconnect</string>
     <string name="imageService_header">Image Service</string>
+    <string name="progressBar_header">Transfer status:</string>
+
 </resources>
