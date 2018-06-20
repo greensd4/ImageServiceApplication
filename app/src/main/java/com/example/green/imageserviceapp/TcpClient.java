@@ -66,6 +66,7 @@ public class TcpClient {
             String[] args = createArgs(byteFile,nameOfFile);
             //creating a new CommandRecievedEventArgs object
             CommandRecievedEventArgs crea = new CommandRecievedEventArgs(7,args,null);
+
             //cast CommandRecievedEventArgs into JSon
             String bytesAsString = crea.toJson();
             //send Command to service.
