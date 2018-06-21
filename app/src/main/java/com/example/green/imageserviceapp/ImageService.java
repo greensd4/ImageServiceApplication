@@ -89,6 +89,7 @@ public class ImageService extends Service {
             public void run() {
                 try {
                     TcpClient tcpClient = new TcpClient(8500, "10.0.2.2");
+
                     int count = 0;
                     int length = androidImages.size();
                     for (File pic : androidImages) {
