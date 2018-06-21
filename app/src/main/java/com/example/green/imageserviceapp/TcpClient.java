@@ -17,39 +17,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class TcpClient {
-    private int port;
-    private String ip;
     private Socket socket;
     private final static Lock mutex = new ReentrantLock(true);
 
     public TcpClient(int port, String ip)throws Exception{
-        this.port = port;
-        this.ip = ip;
-        createNewConnection();
+        InetAddress serverAddr = InetAddress.getByName(ip);
+        try {
+            this.socket = new Socket(ip, port);
+        } catch (Exception e) {
+            throw  e;
+        }
     }
-    private void createNewConnection() throws Exception{
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-                InetAddress serverAddr;
-                try {
-                    try{
-                        //here you must put your computer's IP address.
-                        serverAddr = InetAddress.getByName(this.ip);
-                    }catch (Exception e) {
-                        Log.e("TCP", "ADD: Error", e);
-                        return;
-                    }
-                    Log.d("TCP Client", "M: Connecting...");
-                    //create a socket to make the connection with the server
-                    socket = new Socket(serverAddr, this.port);
-                    //mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                } catch (Exception e) {
-                    Log.e("TCP", "Socket: Error", e);
-                }
-           // }
-        //}).start();
-    }
+
     public void disconnect(){
         try {
             socket.close();
@@ -57,30 +36,33 @@ public class TcpClient {
             Log.e("TCP", "Socket: Error", e);
         }
     }
-    public void sendFile(final File file) throws Exception{
+    public void sendFile(File file) throws Exception{
         final File f = file;
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     Log.d("TCP Client", "M: Sending a file..." +f.getName());
-                    DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-                    String nameOfFile = f.getName();
-                    byte[] byteFile = getFileByBytes(f);
-                    String[] args = createArgs(byteFile,nameOfFile);
-                    //creating a new CommandRecievedEventArgs object
-                    CommandRecievedEventArgs crea = new CommandRecievedEventArgs(7,args,null);
-                    //cast CommandRecievedEventArgs into JSon
-                    String commandString = crea.toJson();
-                    int len = commandString.length();
-                    //send Command to service.
+                    OutputStream output = socket.getOutputStream();
+                    InputStream input = socket.getInputStream();
+                    //Write name to the server
                     mutex.lock();
-                    output.write(len);
+                    output.write(f.getName().getBytes());
+                    //Get confirm from server that it can send the photo
+                    byte[] confirmation = new byte[1];
+                    int res = input.read(confirmation);
+                    //If it read the confirmation byte
+                    if(res == 1) {
+                        //if the byte that was returned was 0 can not send photo and return
+                        if(confirmation[0] == 0)
+                            return;
+                    } else {
+                        return;
+                    }
+                    byte[] byteFile = getFileByBytes(f);
+                    output.write(byteFile);
                     output.flush();
-                    output.write(commandString.getBytes(), 0, len);
-                    output.flush();
-                    mutex.unlock();
-                    //output.close();
+                    mutex.unlock();;
                 } catch (Exception e) {
                     Log.e("TCP", "C: Error", e);
                 }

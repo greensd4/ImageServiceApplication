@@ -28,8 +28,7 @@ public class ImageService extends Service {
     private BroadcastReceiver wifiReceiver;
     private IntentFilter filter;
     private List<File> androidImages;
-
-    public ImageService() { }
+    private TcpClient client;
 
     @Nullable
     @Override
@@ -47,6 +46,10 @@ public class ImageService extends Service {
         filter = new IntentFilter();
         filter.addAction("android.net.wifi.supplicant.CONNECTION_CHANGE");
         filter.addAction("android.net.wifi.STATE_CHANGE");
+    }
+
+    public int onStartCommand(Intent intent, int flag, int startId) {
+        Toast.makeText(this,"Service starting...", Toast.LENGTH_SHORT).show();
         wifiReceiver = new BroadcastReceiver() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
@@ -55,8 +58,6 @@ public class ImageService extends Service {
                 NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
                 if (networkInfo != null) {
                     if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-                        //get the different network states
-                        //
                         if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
                             startTransfer(context);
                         }
@@ -65,10 +66,6 @@ public class ImageService extends Service {
             }
         };
         this.registerReceiver(this.wifiReceiver, filter);
-    }
-
-    public int onStartCommand(Intent intent, int flag, int startId) {
-        Toast.makeText(this,"Service starting...", Toast.LENGTH_SHORT).show();
         return START_STICKY;
     }
 
@@ -92,17 +89,21 @@ public class ImageService extends Service {
         builder.setSmallIcon(R.drawable.ic_launcher_background);
         builder.setContentTitle("Transfer images");
         builder.setContentText("Transfer in progress...");
+        try {
+            this.client = new TcpClient(7999, "10.0.2.2");
+        } catch (Exception e) {
+            Log.e("Tcp", "C: Error", e);
+            return;
+        }
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    TcpClient tcpClient = new TcpClient(9000, "10.0.2.2");
-
                     int count = 0;
                     int length = androidImages.size();
                     for (File pic : androidImages) {
                         //sends the message to the server
-                        tcpClient.sendFile(pic);
+                        client.sendFile(pic);
                         Log.d("Tcp Client:", "sent file:" + pic.getName());
                         //updating the progress bar.
                         count = count + 100 / length;
