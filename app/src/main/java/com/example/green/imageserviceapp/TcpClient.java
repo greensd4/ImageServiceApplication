@@ -2,13 +2,11 @@ package com.example.green.imageserviceapp;
 
 import android.util.Log;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
