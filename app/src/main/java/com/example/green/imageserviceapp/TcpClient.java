@@ -2,12 +2,14 @@ package com.example.green.imageserviceapp;
 
 import android.util.Log;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -62,9 +64,7 @@ public class TcpClient {
             public void run() {
                 try {
                     Log.d("TCP Client", "M: Sending a file..." +f.getName());
-                    //PrintWriter output = new PrintWriter(socket.getOutputStream());
                     DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-                    InputStream input = socket.getInputStream();
                     String nameOfFile = f.getName();
                     byte[] byteFile = getFileByBytes(f);
                     String[] args = createArgs(byteFile,nameOfFile);
@@ -72,10 +72,12 @@ public class TcpClient {
                     CommandRecievedEventArgs crea = new CommandRecievedEventArgs(7,args,null);
                     //cast CommandRecievedEventArgs into JSon
                     String commandString = crea.toJson();
+                    int len = commandString.length();
                     //send Command to service.
                     mutex.lock();
-                    output.write(commandString.getBytes(),0,commandString.length());
-                    //output.print(commandString);
+                    output.write(len);
+                    output.flush();
+                    output.write(commandString.getBytes(), 0, len);
                     output.flush();
                     mutex.unlock();
                     //output.close();
