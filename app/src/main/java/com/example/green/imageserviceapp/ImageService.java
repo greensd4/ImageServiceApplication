@@ -1,13 +1,12 @@
 package com.example.green.imageserviceapp;
 
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
@@ -25,9 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ImageService extends Service {
-    BroadcastReceiver wifiReceiver;
-    IntentFilter filter;
-    List<File> androidImages;
+    //members
+    private BroadcastReceiver wifiReceiver;
+    private IntentFilter filter;
+    private List<File> androidImages;
 
     public ImageService() { }
 
@@ -36,6 +36,11 @@ public class ImageService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
+
+    /**
+     * onCreate().
+     * create the wifi broadcast listener and register it.
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -73,14 +78,17 @@ public class ImageService extends Service {
         Log.d("Service: ", "M: Disconnected");
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void startTransfer(Context context) {
         updateImageList();
-        File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         final int notify_id = 1;
         final NotificationCompat.Builder builder = new NotificationCompat.
                 Builder(context, "default");
         final NotificationManager notificationManager = (NotificationManager)
                 getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationChannel channel = new NotificationChannel("default", "Progress bar", NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setDescription("Progress bar for image transfer");
+        notificationManager.createNotificationChannel(channel);
         builder.setSmallIcon(R.drawable.ic_launcher_background);
         builder.setContentTitle("Transfer images");
         builder.setContentText("Transfer in progress...");
@@ -88,7 +96,7 @@ public class ImageService extends Service {
             @Override
             public void run() {
                 try {
-                    TcpClient tcpClient = new TcpClient(8500, "10.0.2.2");
+                    TcpClient tcpClient = new TcpClient(9000, "10.0.2.2");
 
                     int count = 0;
                     int length = androidImages.size();

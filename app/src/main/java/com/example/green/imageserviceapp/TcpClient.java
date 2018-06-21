@@ -19,7 +19,6 @@ public class TcpClient {
     private String ip;
     private Socket socket;
     private final static Lock mutex = new ReentrantLock(true);
-    //private File fileToSend;
 
     public TcpClient(int port, String ip)throws Exception{
         this.port = port;
