@@ -42,11 +42,6 @@ public class ImageService extends Service {
         filter = new IntentFilter();
         filter.addAction("android.net.wifi.supplicant.CONNECTION_CHANGE");
         filter.addAction("android.net.wifi.STATE_CHANGE");
-
-    }
-
-    public int onStartCommand(Intent intent, int flag, int startId) {
-        Toast.makeText(this,"Service starting...", Toast.LENGTH_SHORT).show();
         wifiReceiver = new BroadcastReceiver() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
@@ -65,13 +60,21 @@ public class ImageService extends Service {
             }
         };
         this.registerReceiver(this.wifiReceiver, filter);
+    }
+
+    public int onStartCommand(Intent intent, int flag, int startId) {
+        Toast.makeText(this,"Service starting...", Toast.LENGTH_SHORT).show();
         return START_STICKY;
     }
 
     public void onDestroy() {
+        this.unregisterReceiver(this.wifiReceiver);
         Toast.makeText(this,"Service ending...", Toast.LENGTH_SHORT).show();
+        Log.d("Service: ", "M: Disconnected");
     }
+
     public void startTransfer(Context context) {
+        updateImageList();
         File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         final int notify_id = 1;
         final NotificationCompat.Builder builder = new NotificationCompat.

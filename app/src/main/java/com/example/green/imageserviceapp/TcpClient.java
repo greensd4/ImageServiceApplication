@@ -3,6 +3,7 @@ package com.example.green.imageserviceapp;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -62,7 +63,8 @@ public class TcpClient {
             public void run() {
                 try {
                     Log.d("TCP Client", "M: Sending a file..." +f.getName());
-                    PrintWriter output = new PrintWriter(socket.getOutputStream());
+                    //PrintWriter output = new PrintWriter(socket.getOutputStream());
+                    DataOutputStream output = new DataOutputStream(socket.getOutputStream());
                     InputStream input = socket.getInputStream();
                     String nameOfFile = f.getName();
                     byte[] byteFile = getFileByBytes(f);
@@ -73,7 +75,8 @@ public class TcpClient {
                     String commandString = crea.toJson();
                     //send Command to service.
                     mutex.lock();
-                    output.print(commandString);
+                    output.write(commandString.getBytes(),0,commandString.length());
+                    //output.print(commandString);
                     output.flush();
                     mutex.unlock();
                     //output.close();
