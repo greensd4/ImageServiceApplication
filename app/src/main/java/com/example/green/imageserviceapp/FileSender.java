@@ -43,6 +43,11 @@ public class FileSender {
             Log.e("TCP", "C: Error", e);
         }
     }
+    public void disconnect(){
+        try {
+            this.socket.close();
+        } catch (Exception e){}
+    }
     public void sendFile(File file) {
         try {
             Log.d("TCP Client", "M: Sending a file..." + file.getName());
@@ -63,6 +68,7 @@ public class FileSender {
             }
             byte[] byteFile = getFileByBytes(file);
             output.write(byteFile);
+            res = input.read(confirmation);
             output.flush();
         } catch (Exception e) {
             Log.e("TCP", "C: Error", e);

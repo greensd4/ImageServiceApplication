@@ -71,6 +71,7 @@ public class ImageService extends Service {
 
     public void onDestroy() {
         this.unregisterReceiver(this.wifiReceiver);
+        this.sender.disconnect();
         Toast.makeText(this,"Service ending...", Toast.LENGTH_SHORT).show();
         Log.d("Service: ", "M: Disconnected");
     }
@@ -106,7 +107,6 @@ public class ImageService extends Service {
                     for (File pic : androidImages) {
                         //sends the message to the server
                         sender.sendFile(pic);
-                        Thread.sleep(2000);
                         Log.d("Tcp Client:", "sent file:" + pic.getName());
                         //updating the progress bar.
                         count = count + 100 / length;
@@ -143,6 +143,8 @@ public class ImageService extends Service {
         for (File file : fileOrDir) {
             //check if dir
             if (file.isDirectory()) {
+                if(file.getName().contains("thumbnails"))
+                    continue;
                 getImage(file, picsFilesList);
             } else if(isImage(file)) { //check if file
                 picsFilesList.add(file);
