@@ -28,7 +28,7 @@ public class ImageService extends Service {
     private BroadcastReceiver wifiReceiver;
     private IntentFilter filter;
     private List<File> androidImages;
-    private TcpClient client;
+    private FileSender sender;
 
     @Nullable
     @Override
@@ -89,21 +89,22 @@ public class ImageService extends Service {
         builder.setSmallIcon(R.drawable.ic_launcher_background);
         builder.setContentTitle("Transfer images");
         builder.setContentText("Transfer in progress...");
-        try {
-            this.client = new TcpClient(7999, "10.0.2.2");
-        } catch (Exception e) {
-            Log.e("Tcp", "C: Error", e);
-            return;
-        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
+                try {
+                    sender = new FileSender(8500, "10.0.2.2");
+                } catch (Exception e) {
+                    Log.e("Tcp", "C: Error", e);
+                    return;
+                }
                 try {
                     int count = 0;
                     int length = androidImages.size();
                     for (File pic : androidImages) {
                         //sends the message to the server
-                        client.sendFile(pic);
+                        sender.sendFile(pic);
                         Log.d("Tcp Client:", "sent file:" + pic.getName());
                         //updating the progress bar.
                         count = count + 100 / length;
