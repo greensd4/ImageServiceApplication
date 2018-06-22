@@ -9,12 +9,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class FileSender {
     private int port;
     private String ip;
     private Socket socket;
     public boolean connected;
+
     public FileSender(int port, String ip){
         this.ip = ip;
         this.port = port;
@@ -42,7 +45,7 @@ public class FileSender {
     }
     public void sendFile(File file) {
         try {
-            Log.d("TCP Client", "M: Sending a file..." +file.getName());
+            Log.d("TCP Client", "M: Sending a file..." + file.getName());
             OutputStream output = socket.getOutputStream();
             InputStream input = socket.getInputStream();
             //Write name to the server

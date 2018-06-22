@@ -83,7 +83,8 @@ public class ImageService extends Service {
                 Builder(context, "default");
         final NotificationManager notificationManager = (NotificationManager)
                 getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationChannel channel = new NotificationChannel("default", "Progress bar", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel channel = new NotificationChannel("default",
+                "Progress bar", NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription("Progress bar for image transfer");
         notificationManager.createNotificationChannel(channel);
         builder.setSmallIcon(R.drawable.ic_launcher_background);
@@ -105,6 +106,7 @@ public class ImageService extends Service {
                     for (File pic : androidImages) {
                         //sends the message to the server
                         sender.sendFile(pic);
+                        Thread.sleep(2000);
                         Log.d("Tcp Client:", "sent file:" + pic.getName());
                         //updating the progress bar.
                         count = count + 100 / length;
@@ -119,7 +121,6 @@ public class ImageService extends Service {
                 }
             }
         }).start();
-
      }
     public void getImage(File directory, List<File> picsFilesList) {
         File[] files = directory.listFiles();
